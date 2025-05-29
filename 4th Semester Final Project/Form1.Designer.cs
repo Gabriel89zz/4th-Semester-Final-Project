@@ -46,7 +46,6 @@
             btnBD = new Button();
             btnSaveInBD = new Button();
             lblRecordCount = new Label();
-            button1 = new Button();
             ((System.ComponentModel.ISupportInitialize)dgvData).BeginInit();
             SuspendLayout();
             // 
@@ -98,9 +97,9 @@
             label1.AutoSize = true;
             label1.Location = new Point(27, 9);
             label1.Name = "label1";
-            label1.Size = new Size(58, 15);
+            label1.Size = new Size(52, 15);
             label1.TabIndex = 5;
-            label1.Text = "Filtrar por";
+            label1.Text = "Filter by:";
             // 
             // textBox1
             // 
@@ -113,7 +112,7 @@
             // 
             // btnSave
             // 
-            btnSave.Location = new Point(471, 27);
+            btnSave.Location = new Point(444, 27);
             btnSave.Name = "btnSave";
             btnSave.Size = new Size(98, 33);
             btnSave.TabIndex = 7;
@@ -133,7 +132,7 @@
             // 
             // btnCreate
             // 
-            btnCreate.Location = new Point(471, 76);
+            btnCreate.Location = new Point(444, 76);
             btnCreate.Name = "btnCreate";
             btnCreate.Size = new Size(98, 33);
             btnCreate.TabIndex = 10;
@@ -182,9 +181,9 @@
             label2.AutoSize = true;
             label2.Location = new Point(831, 26);
             label2.Name = "label2";
-            label2.Size = new Size(33, 15);
+            label2.Size = new Size(47, 15);
             label2.TabIndex = 15;
-            label2.Text = "Para:";
+            label2.Text = "mail to:";
             // 
             // btnBD
             // 
@@ -214,21 +213,11 @@
             lblRecordCount.Size = new Size(0, 15);
             lblRecordCount.TabIndex = 18;
             // 
-            // button1
-            // 
-            button1.Location = new Point(706, 27);
-            button1.Name = "button1";
-            button1.Size = new Size(98, 33);
-            button1.TabIndex = 19;
-            button1.Text = "YARE YARE";
-            button1.UseVisualStyleBackColor = true;
-            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1229, 737);
-            Controls.Add(button1);
             Controls.Add(lblRecordCount);
             Controls.Add(btnSaveInBD);
             Controls.Add(btnBD);
@@ -274,6 +263,5 @@
         private Button btnBD;
         private Button btnSaveInBD;
         private Label lblRecordCount;
-        private Button button1;
     }
 }
