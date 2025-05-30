@@ -54,6 +54,7 @@ namespace _4th_Semester_Final_Project
                     try
                     {
                         //txtData.Text = File.ReadAllText(filePath, Encoding.Latin1); // Mostrar contenido en txtData
+                        LoadInTextbox(filePath);
                         dgvData.DataSource = null;
 
                         switch (ext)
@@ -82,6 +83,8 @@ namespace _4th_Semester_Final_Project
                             ".json" => "JSON",
                             _ => ""
                         };
+                        ClearChart();
+                        LoadPlayerStatsIntoTreeView(new DataView(originalDataTable/*dataTable*/));
                         UpdateRecordCount();
                     }
                     catch (Exception ex)
@@ -92,6 +95,14 @@ namespace _4th_Semester_Final_Project
             }
         }
 
+        private async void LoadInTextbox(string filePath)
+        {
+            txtData.Text = "Cargando...";
+
+            string texto = await Task.Run(() => File.ReadAllText(filePath, Encoding.Latin1));
+
+            txtData.Text = texto;
+        }
 
         private DataTable LoadDataFromCSV(string filePath)
         {
@@ -137,9 +148,7 @@ namespace _4th_Semester_Final_Project
                 originalDataTable = dataTable;
                 cmbFilter.Items.Clear();
                 foreach (DataColumn col in dataTable.Columns)
-                    cmbFilter.Items.Add(col.ColumnName);
-                ClearChart();
-                LoadPlayerStatsIntoTreeView(new DataView(/*originalDataTable*/dataTable));
+                cmbFilter.Items.Add(col.ColumnName);
             }
             catch (Exception ex)
             {
@@ -674,14 +683,13 @@ namespace _4th_Semester_Final_Project
                 // Configuración SMTP (Gmail)
                 SmtpClient client = new SmtpClient("smtp.gmail.com", 587)
                 {
-                    Credentials = new NetworkCredential("elcomparosh97@gmail.com", "xmem fypa rter tvkm"),
+                    Credentials = new NetworkCredential("elcomparosh97@gmail.com", "kecp sfqy aosh jpjj"),
                     EnableSsl = true
                 };
 
                 MailMessage mail = new MailMessage
                 {
                     From = new MailAddress("elcomparosh97@gmail.com"),
-                    //puedo cambiar esto
                     Subject = "Archivo adjunto",
                     Body = "Este es el archivo solicitado.",
                     IsBodyHtml = false
@@ -737,6 +745,20 @@ namespace _4th_Semester_Final_Project
                     ShowLanguageDistribution(allMovies);
                     LoadMoviesIntoTreeView(allMovies);
 
+                    // === Mostrar datos en formato de texto plano en un TextBox ===
+                    StringBuilder sb = new StringBuilder();
+
+                    foreach (var movie in allMovies)
+                    {
+                        sb.AppendLine($"ID: {movie.id}");
+                        sb.AppendLine($"Title: {movie.title}");
+                        sb.AppendLine($"Release Date: {movie.release_date.ToShortDateString()}");
+                        sb.AppendLine($"Vote Average: {movie.vote_average}");
+                        sb.AppendLine($"Original Language: {movie.original_language}");
+                        sb.AppendLine(new string('-', 40)); // Separador entre registros
+                    }
+
+                    txtData.Text = sb.ToString();
                 }
                 catch (Exception ex)
                 {
@@ -854,8 +876,8 @@ namespace _4th_Semester_Final_Project
         {
             try
             {
-                string query = "SELECT * FROM top_chess_players_aug_2020";
-                //string query = "  SELECT TOP 1000 * FROM top_chess_players_aug_2020;";
+                //string query = "SELECT * FROM top_chess_players_aug_2020";
+                string query = "  SELECT TOP 1000 * FROM top_chess_players_aug_2020;";
 
                 adapter = new SqlDataAdapter(query, connection);
                 SqlCommandBuilder commandBuilder = new SqlCommandBuilder(adapter);
@@ -1032,7 +1054,6 @@ namespace _4th_Semester_Final_Project
             };
         }
 
-        // Método auxiliar para la conversión segura
         private double SafeConvert(object value)
         {
             if (value == null || !double.TryParse(value.ToString(), out double result))
@@ -1134,6 +1155,7 @@ namespace _4th_Semester_Final_Project
         private void GenerateGraph()
         {
             graphic.Plot.Clear();
+            graphic.Plot.ShowAxesAndGrid();
             var federationCounts = new Dictionary<string, int>();
 
             foreach (DataGridViewRow row in dgvData.Rows)
