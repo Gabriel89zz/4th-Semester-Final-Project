@@ -63,7 +63,7 @@ namespace _4th_Semester_Final_Project
                                 break;
                             case ".txt":
                                 // Asumimos que los .txt usan | como delimitador
-                                dgvData.DataSource = LoadDataFromTXT(filePath);
+                                dgvData.DataSource = LoadDataFromTXT(filePath,'|');
                                 break;
                             case ".xml":
                                 dgvData.DataSource = LoadDataFromXML(filePath);
@@ -236,70 +236,42 @@ namespace _4th_Semester_Final_Project
             return dataTable;
         }
 
-        private DataTable LoadDataFromTXT(string filePath)
+        private DataTable LoadDataFromTXT(string filePath, char delimiter)
         {
-            DataTable dataTable = new DataTable();
-
+            DataTable dt = new DataTable();
             try
             {
-                using (TextFieldParser parser = new TextFieldParser(filePath))
+                using (StreamReader sr = new StreamReader(filePath))
                 {
-                    parser.TextFieldType = FieldType.Delimited;
-                    parser.SetDelimiters("|"); // Cambiado a '|' como delimitador
-                    parser.HasFieldsEnclosedInQuotes = true;
-                    parser.TrimWhiteSpace = true;
-
-                    if (!parser.EndOfData) // Verificar si hay datos en el archivo
+                    string[] headers = sr.ReadLine().Split(delimiter);
+                    foreach (string header in headers)
                     {
-                        string[] headers = parser.ReadFields();
-                        if (headers == null)
+                        dt.Columns.Add(header);
+                    }
+                    while (!sr.EndOfStream)
+                    {
+                        string[] rows = sr.ReadLine().Split(delimiter);
+                        DataRow dr = dt.NewRow();
+                        for (int i = 0; i < headers.Length; i++)
                         {
-                            throw new Exception("The file does not contain valid header fields.");
+                            dr[i] = rows[i];
                         }
-
-                        foreach (string header in headers)
-                        {
-                            dataTable.Columns.Add(header);
-                        }
-
-                        int expectedColumns = headers.Length;
-
-                        while ((string[])parser.ReadFields() != null) 
-                        {
-                            string[] fields = parser.ReadFields();
-
-                            if (fields == null || fields.Length != expectedColumns)
-                            {
-                                continue; // Saltar filas inconsistentes
-                            }
-
-                            DataRow dataRow = dataTable.NewRow();
-                            for (int i = 0; i < expectedColumns; i++)
-                            {
-                                dataRow[i] = fields[i];
-                            }
-                            dataTable.Rows.Add(dataRow);
-                        }
+                        dt.Rows.Add(dr);
                     }
                 }
-
                 currentFilePath = filePath;
                 currentFileExtension = Path.GetExtension(filePath).ToLower();
 
-                originalDataTable = dataTable;
+                originalDataTable = dt;
                 cmbFilter.Items.Clear();
-                foreach (DataColumn col in dataTable.Columns)
+                foreach (DataColumn col in dt.Columns)
                     cmbFilter.Items.Add(col.ColumnName);
-
-                ClearChart();
-                LoadPlayerStatsIntoTreeView(new DataView(dataTable));
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Error reading TXT file: " + ex.Message);
             }
-
-            return dataTable;
+            return dt;
         }
 
         private void btnSave_Click(object sender, EventArgs e)
@@ -425,26 +397,29 @@ namespace _4th_Semester_Final_Project
         {
             using (StreamWriter writer = new StreamWriter(filePath))
             {
-                // Write the header row
+                // Escribir los encabezados
                 StringBuilder headerLine = new StringBuilder();
                 foreach (DataGridViewColumn column in dgvData.Columns)
                 {
-                    headerLine.Append(column.HeaderText + separator);
+                    headerLine.Append(column.HeaderText).Append(separator);
                 }
                 writer.WriteLine(headerLine.ToString().TrimEnd(separator));
 
-                // Write the data rows
+                // Escribir las filas
                 foreach (DataGridViewRow row in dgvData.Rows)
                 {
                     if (!row.IsNewRow)
                     {
                         StringBuilder rowLine = new StringBuilder();
-                        foreach (DataGridViewCell cell in row.Cells)
+
+                        for (int i = 0; i < row.Cells.Count; i++)
                         {
-                            object value = cell.Value ?? "[EMPTY CELL]";
-                            rowLine.Append(value.ToString() + separator);
+                            string value = row.Cells[i].Value?.ToString() ?? "";
+                            rowLine.Append(value).Append(separator);
                         }
-                        writer.WriteLine(rowLine.ToString().TrimEnd(separator));
+
+                        // Dejar la línea tal cual, sin TrimEnd(separator) al final
+                        writer.WriteLine(rowLine.ToString());
                     }
                 }
             }
@@ -1102,131 +1077,58 @@ namespace _4th_Semester_Final_Project
 
         private void LoadPlayerStatsIntoTreeView(DataView dv)
         {
-            //DataTable dataTable = dv.ToTable();
-            //treeViewMovies.Nodes.Clear();
-
-            //var seasons = dataTable.AsEnumerable()
-            //    .Skip(1) // Saltar encabezado
-            //    .Where(r => !string.IsNullOrWhiteSpace(r.Field<string>("Season")))
-            //    .GroupBy(row => row.Field<string>("Season"))
-            //    .OrderBy(g => g.Key);
-
-            //foreach (var seasonGroup in seasons)
-            //{
-            //    TreeNode seasonNode = new TreeNode($"Season: {seasonGroup.Key}");
-            //    treeViewMovies.Nodes.Add(seasonNode);
-
-            //    var leagues = seasonGroup.GroupBy(r => r.Field<string>("League") ?? "Liga desconocida");
-
-            //    foreach (var leagueGroup in leagues)
-            //    {
-            //        TreeNode leagueNode = new TreeNode($"League: {leagueGroup.Key}");
-            //        seasonNode.Nodes.Add(leagueNode);
-
-            //        var teams = leagueGroup.GroupBy(r => r.Field<string>("Team") ?? "Equipo desconocido");
-
-            //        foreach (var teamGroup in teams)
-            //        {
-            //            TreeNode teamNode = new TreeNode($"Team: {teamGroup.Key}");
-            //            leagueNode.Nodes.Add(teamNode);
-
-            //            var players = teamGroup.GroupBy(r => r.Field<string>("Player") ?? "Jugador desconocido");
-
-            //            foreach (var playerGroup in players)
-            //            {
-            //                TreeNode playerNode = new TreeNode($"Player: {playerGroup.Key}");
-            //                teamNode.Nodes.Add(playerNode);
-            //                foreach (var row in playerGroup)
-            //                {
-            //                    TreeNode matchPlayedNode = new TreeNode($"Matches Played: {row["Match Played"]}");
-            //                    TreeNode goalsNode = new TreeNode($"Goals: {row["Goals"]}");
-            //                    TreeNode assistsNode = new TreeNode($"Assists: {row["Assists"]}");
-            //                    TreeNode yellowCardsNode = new TreeNode($"Yellow Cards: {row["Yellow Cards"]}");
-            //                    TreeNode redCardsNode = new TreeNode($"Red Cards: {row["Red Cards"]}");
-
-
-            //                    playerNode.Nodes.Add(matchPlayedNode);
-            //                    playerNode.Nodes.Add(goalsNode);
-            //                    playerNode.Nodes.Add(assistsNode);
-            //                    playerNode.Nodes.Add(yellowCardsNode);
-            //                }
-            //            }
-            //        }
-            //    }
-            //}
-
-
             DataTable dataTable = dv.ToTable();
-            treeViewMovies.BeginUpdate();
             treeViewMovies.Nodes.Clear();
 
-            // Diccionarios para evitar duplicados
-            Dictionary<string, TreeNode> seasonNodes = new Dictionary<string, TreeNode>();
-            Dictionary<string, TreeNode> leagueNodes = new Dictionary<string, TreeNode>();
-            Dictionary<string, TreeNode> teamNodes = new Dictionary<string, TreeNode>();
-            Dictionary<string, TreeNode> playerNodes = new Dictionary<string, TreeNode>();
+            var seasons = dataTable.AsEnumerable()
+                .Skip(1) // Saltar encabezado
+                .Where(r => !string.IsNullOrWhiteSpace(r.Field<string>("Season")))
+                .GroupBy(row => row.Field<string>("Season"))
+                .OrderBy(g => g.Key);
 
-            foreach (DataRow row in dataTable.Rows)
+            foreach (var seasonGroup in seasons)
             {
-                string season = row.Field<string>("Season");
-                string league = row.Field<string>("League") ?? "Liga desconocida";
-                string team = row.Field<string>("Team") ?? "Equipo desconocido";
-                string player = row.Field<string>("Player") ?? "Jugador desconocido";
+                TreeNode seasonNode = new TreeNode($"Season: {seasonGroup.Key}");
+                treeViewMovies.Nodes.Add(seasonNode);
 
-                // Saltar encabezado (si es que existe)
-                if (season == "Season" && league == "League" && team == "Team" && player == "Player")
-                    continue;
+                var leagues = seasonGroup.GroupBy(r => r.Field<string>("League") ?? "Liga desconocida");
 
-                // Crear nodo de temporada si no existe
-                if (!seasonNodes.TryGetValue(season, out TreeNode seasonNode))
+                foreach (var leagueGroup in leagues)
                 {
-                    seasonNode = new TreeNode($"Season: {season}");
-                    seasonNodes[season] = seasonNode;
-                    treeViewMovies.Nodes.Add(seasonNode);
-                }
-
-                // Clave única para cada liga dentro de una temporada
-                string leagueKey = $"{season}_{league}";
-                if (!leagueNodes.TryGetValue(leagueKey, out TreeNode leagueNode))
-                {
-                    leagueNode = new TreeNode($"League: {league}");
-                    leagueNodes[leagueKey] = leagueNode;
+                    TreeNode leagueNode = new TreeNode($"League: {leagueGroup.Key}");
                     seasonNode.Nodes.Add(leagueNode);
+
+                    var teams = leagueGroup.GroupBy(r => r.Field<string>("Team") ?? "Equipo desconocido");
+
+                    foreach (var teamGroup in teams)
+                    {
+                        TreeNode teamNode = new TreeNode($"Team: {teamGroup.Key}");
+                        leagueNode.Nodes.Add(teamNode);
+
+                        var players = teamGroup.GroupBy(r => r.Field<string>("Player") ?? "Jugador desconocido");
+
+                        foreach (var playerGroup in players)
+                        {
+                            TreeNode playerNode = new TreeNode($"Player: {playerGroup.Key}");
+                            teamNode.Nodes.Add(playerNode);
+                            foreach (var row in playerGroup)
+                            {
+                                TreeNode matchPlayedNode = new TreeNode($"Matches Played: {row["Match Played"]}");
+                                TreeNode goalsNode = new TreeNode($"Goals: {row["Goals"]}");
+                                TreeNode assistsNode = new TreeNode($"Assists: {row["Assists"]}");
+                                TreeNode yellowCardsNode = new TreeNode($"Yellow Cards: {row["Yellow Cards"]}");
+                                TreeNode redCardsNode = new TreeNode($"Red Cards: {row["Red Cards"]}");
+
+
+                                playerNode.Nodes.Add(matchPlayedNode);
+                                playerNode.Nodes.Add(goalsNode);
+                                playerNode.Nodes.Add(assistsNode);
+                                playerNode.Nodes.Add(yellowCardsNode);
+                            }
+                        }
+                    }
                 }
-
-                // Clave única para cada equipo dentro de una liga
-                string teamKey = $"{leagueKey}_{team}";
-                if (!teamNodes.TryGetValue(teamKey, out TreeNode teamNode))
-                {
-                    teamNode = new TreeNode($"Team: {team}");
-                    teamNodes[teamKey] = teamNode;
-                    leagueNode.Nodes.Add(teamNode);
-                }
-
-                // Clave única para cada jugador dentro de un equipo
-                string playerKey = $"{teamKey}_{player}";
-                if (!playerNodes.TryGetValue(playerKey, out TreeNode playerNode))
-                {
-                    playerNode = new TreeNode($"Player: {player}");
-                    playerNodes[playerKey] = playerNode;
-                    teamNode.Nodes.Add(playerNode);
-                }
-
-                // Agregar estadísticas del partido
-                TreeNode matchPlayedNode = new TreeNode($"Matches Played: {row["Match Played"]}");
-                TreeNode goalsNode = new TreeNode($"Goals: {row["Goals"]}");
-                TreeNode assistsNode = new TreeNode($"Assists: {row["Assists"]}");
-                TreeNode yellowCardsNode = new TreeNode($"Yellow Cards: {row["Yellow Cards"]}");
-                TreeNode redCardsNode = new TreeNode($"Red Cards: {row["Red Cards"]}");
-
-                playerNode.Nodes.Add(matchPlayedNode);
-                playerNode.Nodes.Add(goalsNode);
-                playerNode.Nodes.Add(assistsNode);
-                playerNode.Nodes.Add(yellowCardsNode);
-                playerNode.Nodes.Add(redCardsNode);
             }
-
-            treeViewMovies.EndUpdate();
         }
 
         private void GenerateGraph()
