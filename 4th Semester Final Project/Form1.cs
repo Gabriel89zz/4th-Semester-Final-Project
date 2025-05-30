@@ -894,12 +894,42 @@ namespace _4th_Semester_Final_Project
                 UpdateRecordCount();
                 GenerateGraph();
                 LoadPlayerChessStatsIntoTreeView(new DataView(originalDataTable));
+                DisplayDataTableInTextBox(originalDataTable);
                 MessageBox.Show("Data loaded successfully");
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error loading data: {ex.Message}");
             }
+        }
+
+        private void DisplayDataTableInTextBox(DataTable table)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            // Agregar nombres de columnas
+            for (int i = 0; i < table.Columns.Count; i++)
+            {
+                sb.Append(table.Columns[i].ColumnName);
+                if (i < table.Columns.Count - 1)
+                    sb.Append("\t"); // Separador tabular entre nombres de columnas
+            }
+            sb.AppendLine();
+            sb.AppendLine(new string('-', 80)); // Línea divisoria
+
+            // Agregar filas
+            foreach (DataRow row in table.Rows)
+            {
+                for (int i = 0; i < table.Columns.Count; i++)
+                {
+                    sb.Append(row[i].ToString());
+                    if (i < table.Columns.Count - 1)
+                        sb.Append("\t");
+                }
+                sb.AppendLine();
+            }
+
+            txtData.Text = sb.ToString(); // Asignar al TextBox
         }
 
         private void btnSaveInBD_Click(object sender, EventArgs e)
