@@ -34,7 +34,7 @@
             graphic = new ScottPlot.WinForms.FormsPlot();
             btnOpen = new Button();
             label1 = new Label();
-            textBox1 = new TextBox();
+            txtFilter = new TextBox();
             btnSave = new Button();
             btnExport = new Button();
             btnCreate = new Button();
@@ -46,12 +46,14 @@
             btnBD = new Button();
             btnSaveInBD = new Button();
             lblRecordCount = new Label();
+            btnShowTreeview = new Button();
+            cmbMovieType = new ComboBox();
             ((System.ComponentModel.ISupportInitialize)dgvData).BeginInit();
             SuspendLayout();
             // 
             // txtData
             // 
-            txtData.Location = new Point(27, 115);
+            txtData.Location = new Point(27, 104);
             txtData.Multiline = true;
             txtData.Name = "txtData";
             txtData.Size = new Size(785, 285);
@@ -69,7 +71,7 @@
             // treeViewMovies
             // 
             treeViewMovies.Anchor = AnchorStyles.Right;
-            treeViewMovies.Location = new Point(842, 115);
+            treeViewMovies.Location = new Point(842, 104);
             treeViewMovies.Name = "treeViewMovies";
             treeViewMovies.Size = new Size(343, 285);
             treeViewMovies.TabIndex = 2;
@@ -84,7 +86,7 @@
             // 
             // btnOpen
             // 
-            btnOpen.Location = new Point(328, 27);
+            btnOpen.Location = new Point(328, 14);
             btnOpen.Name = "btnOpen";
             btnOpen.Size = new Size(98, 33);
             btnOpen.TabIndex = 4;
@@ -101,18 +103,18 @@
             label1.TabIndex = 5;
             label1.Text = "Filter by:";
             // 
-            // textBox1
+            // txtFilter
             // 
-            textBox1.Font = new Font("Segoe UI", 14F);
-            textBox1.Location = new Point(27, 56);
-            textBox1.Name = "textBox1";
-            textBox1.Size = new Size(251, 32);
-            textBox1.TabIndex = 6;
-            textBox1.TextChanged += textBox1_TextChanged;
+            txtFilter.Font = new Font("Segoe UI", 14F);
+            txtFilter.Location = new Point(27, 56);
+            txtFilter.Name = "txtFilter";
+            txtFilter.Size = new Size(251, 32);
+            txtFilter.TabIndex = 6;
+            txtFilter.TextChanged += textBox1_TextChanged;
             // 
             // btnSave
             // 
-            btnSave.Location = new Point(444, 27);
+            btnSave.Location = new Point(444, 14);
             btnSave.Name = "btnSave";
             btnSave.Size = new Size(98, 33);
             btnSave.TabIndex = 7;
@@ -122,7 +124,7 @@
             // 
             // btnExport
             // 
-            btnExport.Location = new Point(328, 76);
+            btnExport.Location = new Point(328, 63);
             btnExport.Name = "btnExport";
             btnExport.Size = new Size(98, 33);
             btnExport.TabIndex = 9;
@@ -132,7 +134,7 @@
             // 
             // btnCreate
             // 
-            btnCreate.Location = new Point(444, 76);
+            btnCreate.Location = new Point(444, 63);
             btnCreate.Name = "btnCreate";
             btnCreate.Size = new Size(98, 33);
             btnCreate.TabIndex = 10;
@@ -160,7 +162,7 @@
             // 
             // btnLoadToAPI
             // 
-            btnLoadToAPI.Location = new Point(602, 27);
+            btnLoadToAPI.Location = new Point(602, 14);
             btnLoadToAPI.Name = "btnLoadToAPI";
             btnLoadToAPI.Size = new Size(98, 33);
             btnLoadToAPI.TabIndex = 13;
@@ -187,7 +189,7 @@
             // 
             // btnBD
             // 
-            btnBD.Location = new Point(602, 76);
+            btnBD.Location = new Point(602, 63);
             btnBD.Name = "btnBD";
             btnBD.Size = new Size(98, 33);
             btnBD.TabIndex = 16;
@@ -197,7 +199,7 @@
             // 
             // btnSaveInBD
             // 
-            btnSaveInBD.Location = new Point(706, 76);
+            btnSaveInBD.Location = new Point(706, 63);
             btnSaveInBD.Name = "btnSaveInBD";
             btnSaveInBD.Size = new Size(98, 33);
             btnSaveInBD.TabIndex = 17;
@@ -213,11 +215,33 @@
             lblRecordCount.Size = new Size(0, 15);
             lblRecordCount.TabIndex = 18;
             // 
+            // btnShowTreeview
+            // 
+            btnShowTreeview.Location = new Point(706, 14);
+            btnShowTreeview.Name = "btnShowTreeview";
+            btnShowTreeview.Size = new Size(98, 33);
+            btnShowTreeview.TabIndex = 19;
+            btnShowTreeview.Text = "Show TreeView";
+            btnShowTreeview.UseVisualStyleBackColor = true;
+            btnShowTreeview.Click += btnShowTreeview_Click;
+            // 
+            // cmbMovieType
+            // 
+            cmbMovieType.FormattingEnabled = true;
+            cmbMovieType.Location = new Point(27, 395);
+            cmbMovieType.Name = "cmbMovieType";
+            cmbMovieType.Size = new Size(121, 23);
+            cmbMovieType.TabIndex = 20;
+            cmbMovieType.Visible = false;
+            cmbMovieType.SelectedIndexChanged += cmbMovieType_SelectedIndexChanged;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1229, 737);
+            Controls.Add(cmbMovieType);
+            Controls.Add(btnShowTreeview);
             Controls.Add(lblRecordCount);
             Controls.Add(btnSaveInBD);
             Controls.Add(btnBD);
@@ -229,7 +253,7 @@
             Controls.Add(btnCreate);
             Controls.Add(btnExport);
             Controls.Add(btnSave);
-            Controls.Add(textBox1);
+            Controls.Add(txtFilter);
             Controls.Add(label1);
             Controls.Add(btnOpen);
             Controls.Add(graphic);
@@ -251,7 +275,7 @@
         private ScottPlot.WinForms.FormsPlot graphic;
         private Button btnOpen;
         private Label label1;
-        private TextBox textBox1;
+        private TextBox txtFilter;
         private Button btnSave;
         private Button btnExport;
         private Button btnCreate;
@@ -263,5 +287,7 @@
         private Button btnBD;
         private Button btnSaveInBD;
         private Label lblRecordCount;
+        private Button btnShowTreeview;
+        private ComboBox cmbMovieType;
     }
 }

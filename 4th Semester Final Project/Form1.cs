@@ -27,6 +27,8 @@ namespace _4th_Semester_Final_Project
         {
             InitializeComponent();
             InitializeDatabase();
+            cmbMovieType.Items.AddRange(new string[] { "Popular", "Top Rated", "Now Playing", "Upcoming" });
+            cmbMovieType.SelectedIndex = -1;
         }
 
         private void InitializeDatabase()
@@ -53,8 +55,9 @@ namespace _4th_Semester_Final_Project
 
                     try
                     {
-                        //txtData.Text = File.ReadAllText(filePath, Encoding.Latin1); // Mostrar contenido en txtData
-                        LoadInTextbox(filePath);
+                        ClearChart();
+                        cmbMovieType.Visible = false;
+                        //LoadInTextbox(filePath);
                         dgvData.DataSource = null;
 
                         switch (ext)
@@ -64,7 +67,7 @@ namespace _4th_Semester_Final_Project
                                 break;
                             case ".txt":
                                 // Asumimos que los .txt usan | como delimitador
-                                dgvData.DataSource = LoadDataFromTXT(filePath,'|');
+                                dgvData.DataSource = LoadDataFromTXT(filePath, '|');
                                 break;
                             case ".xml":
                                 dgvData.DataSource = LoadDataFromXML(filePath);
@@ -83,8 +86,7 @@ namespace _4th_Semester_Final_Project
                             ".json" => "JSON",
                             _ => ""
                         };
-                        ClearChart();
-                        LoadPlayerStatsIntoTreeView(new DataView(originalDataTable/*dataTable*/));
+                        //LoadPlayerStatsIntoTreeView(new DataView(originalDataTable/*dataTable*/));
                         UpdateRecordCount();
                     }
                     catch (Exception ex)
@@ -148,7 +150,7 @@ namespace _4th_Semester_Final_Project
                 originalDataTable = dataTable;
                 cmbFilter.Items.Clear();
                 foreach (DataColumn col in dataTable.Columns)
-                cmbFilter.Items.Add(col.ColumnName);
+                    cmbFilter.Items.Add(col.ColumnName);
             }
             catch (Exception ex)
             {
@@ -285,30 +287,99 @@ namespace _4th_Semester_Final_Project
 
         private void btnSave_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrEmpty(currentFilePath) || originalDataTable == null)
+            switch (dataSourceType)
             {
-                MessageBox.Show("No file uploaded to save.");
-                return;
-            }
+                case "API":
+                    break;
+                case "CSV":
+                case "XML":
+                case "JSON":
+                    if (string.IsNullOrEmpty(currentFilePath) || originalDataTable == null)
+                    {
+                        MessageBox.Show("No file uploaded to save.");
+                        return;
+                    }
 
-            switch (currentFileExtension)
-            {
-                case ".csv":
-                case ".txt":
-                    ExportToCSV(currentFilePath);
+                    switch (currentFileExtension)
+                    {
+                        case ".csv":
+                        case ".txt":
+                            ExportToCSV(currentFilePath);
+                            break;
+                        case ".json":
+                            ExportToJson(currentFilePath);
+                            break;
+                        case ".xml":
+                            ExportToXML(currentFilePath);
+                            break;
+                        default:
+                            MessageBox.Show("Unsupported format for saving.");
+                            break;
+                    }
+
+                    MessageBox.Show("File saved successfully.");
                     break;
-                case ".json":
-                    ExportToJson(currentFilePath);
+
+                case "DATABASE":
+                    try
+                    {
+                        if (dataSourceType != "DATABASE")
+                        {
+                            MessageBox.Show("No data has been loaded from the database. Please load data first.");
+                            return;
+                        }
+
+                        if (originalDataTable != null)
+                        {
+                            // Aplicar cambios pendientes en el DataGridView
+                            dgvData.EndEdit();
+
+                            // Actualizar la base de datos
+                            adapter.Update(originalDataTable);
+
+                            MessageBox.Show("Changes saved successfully");
+                        }
+                        else
+                        {
+                            MessageBox.Show("There is no data to save. Please load data first.");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error saving changes: {ex.Message}");
+                    }
                     break;
-                case ".xml":
-                    ExportToXML(currentFilePath);
-                    break;
+
                 default:
-                    MessageBox.Show("Unsupported format for saving.");
+                    MessageBox.Show("No data source selected.");
                     break;
             }
 
-            MessageBox.Show("File saved successfully.");
+
+            //if (string.IsNullOrEmpty(currentFilePath) || originalDataTable == null)
+            //{
+            //    MessageBox.Show("No file uploaded to save.");
+            //    return;
+            //}
+
+            //switch (currentFileExtension)
+            //{
+            //    case ".csv":
+            //    case ".txt":
+            //        ExportToCSV(currentFilePath);
+            //        break;
+            //    case ".json":
+            //        ExportToJson(currentFilePath);
+            //        break;
+            //    case ".xml":
+            //        ExportToXML(currentFilePath);
+            //        break;
+            //    default:
+            //        MessageBox.Show("Unsupported format for saving.");
+            //        break;
+            //}
+
+            //MessageBox.Show("File saved successfully.");
         }
 
         private void ExportToCSV(string filepath)
@@ -440,7 +511,7 @@ namespace _4th_Semester_Final_Project
                 return;
 
             string selectedColumn = cmbFilter.SelectedItem.ToString();
-            string filterText = textBox1.Text.Trim();
+            string filterText = txtFilter.Text.Trim();
 
             DataView dv = new DataView(originalDataTable);
             var columnType = originalDataTable.Columns[selectedColumn].DataType;
@@ -711,21 +782,43 @@ namespace _4th_Semester_Final_Project
 
         private async void btnLoadToAPI_Click(object sender, EventArgs e)
         {
-            int totalPages = 10; // Número de páginas a cargar
-            var allMovies = new List<Movie>(); // Lista para acumular todas las películas
+            dataSourceType = "API";
+            ClearChart();
+            cmbMovieType.Visible = true;
+            string selectedType = cmbMovieType.SelectedItem?.ToString();
+            await LoadMoviesByTypeAsync(selectedType);
+        }
+
+        private async Task LoadMoviesByTypeAsync(string movieType)
+        {
+            if (string.IsNullOrEmpty(movieType))
+                return;
+
+            int totalPages = 10;
+            var allMovies = new List<Movie>();
+
+            string baseUrl = "https://api.themoviedb.org/3/movie/";
+            string endpoint = movieType switch
+            {
+                "Popular" => "popular",
+                "Top Rated" => "top_rated",
+                "Now Playing" => "now_playing",
+                "Upcoming" => "upcoming",
+                _ => "popular"
+            };
 
             using (HttpClient client = new HttpClient())
             {
                 try
                 {
-                    // Configurar encabezados
+                    txtData.Text = "Loading...";
                     client.DefaultRequestHeaders.Clear();
                     client.DefaultRequestHeaders.Add("accept", "application/json");
                     client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
 
                     for (int page = 1; page <= totalPages; page++)
                     {
-                        string url = $"https://api.themoviedb.org/3/movie/popular?language=en-US&page= {page}";
+                        string url = $"{baseUrl}{endpoint}?language=en-US&page={page}";
 
                         HttpResponseMessage response = await client.GetAsync(url);
                         response.EnsureSuccessStatusCode();
@@ -733,21 +826,17 @@ namespace _4th_Semester_Final_Project
                         string json = await response.Content.ReadAsStringAsync();
                         var resultado = JsonConvert.DeserializeObject<TmdbPopularResponse>(json);
 
-                        allMovies.AddRange(resultado.results); // Agregar las películas de esta página
+                        allMovies.AddRange(resultado.results);
                     }
 
-
-                    // Asignar los datos al DataGridView
+                    // Actualizar controles del formulario
                     dgvData.DataSource = ConvertToDataTable(allMovies);
-                    //isDataFromAPI = true;
                     dataSourceType = "API";
-                    UpdateRecordCount();
                     ShowLanguageDistribution(allMovies);
                     LoadMoviesIntoTreeView(allMovies);
 
-                    // === Mostrar datos en formato de texto plano en un TextBox ===
+                    // Mostrar datos en txtData
                     StringBuilder sb = new StringBuilder();
-
                     foreach (var movie in allMovies)
                     {
                         sb.AppendLine($"ID: {movie.id}");
@@ -755,7 +844,7 @@ namespace _4th_Semester_Final_Project
                         sb.AppendLine($"Release Date: {movie.release_date.ToShortDateString()}");
                         sb.AppendLine($"Vote Average: {movie.vote_average}");
                         sb.AppendLine($"Original Language: {movie.original_language}");
-                        sb.AppendLine(new string('-', 40)); // Separador entre registros
+                        sb.AppendLine(new string('-', 40));
                     }
 
                     txtData.Text = sb.ToString();
@@ -851,8 +940,10 @@ namespace _4th_Semester_Final_Project
         {
             try
             {
+                cmbMovieType.Visible = false;
+                ClearChart();
                 //string query = "SELECT * FROM top_chess_players_aug_2020";
-                string query = "  SELECT TOP 1000 * FROM top_chess_players_aug_2020;";
+                string query = "  SELECT TOP 100000 * FROM top_chess_players_aug_2020;";
 
                 adapter = new SqlDataAdapter(query, connection);
                 SqlCommandBuilder commandBuilder = new SqlCommandBuilder(adapter);
@@ -866,10 +957,7 @@ namespace _4th_Semester_Final_Project
                 foreach (DataColumn col in originalDataTable.Columns)
                     cmbFilter.Items.Add(col.ColumnName);
                 dataSourceType = "DATABASE";
-                UpdateRecordCount();
                 GenerateGraph();
-                LoadPlayerChessStatsIntoTreeView(new DataView(originalDataTable));
-                DisplayDataTableInTextBox(originalDataTable);
                 MessageBox.Show("Data loaded successfully");
             }
             catch (Exception ex)
@@ -985,9 +1073,17 @@ namespace _4th_Semester_Final_Project
 
         private void ClearChart()
         {
+            txtData.Clear();
+            treeViewMovies.Nodes.Clear();
+            cmbFilter.SelectedIndex = -1;
+            txtFilter.Clear();
             graphic.Plot.Clear();
             graphic.Plot.Title("");
+            graphic.Plot.Axes.Frameless();
+            graphic.Plot.HideGrid();
             graphic.Refresh();
+            graphic.Plot.Axes.AutoScale();
+
         }
 
         private void UpdateRecordCount()
@@ -1190,10 +1286,6 @@ namespace _4th_Semester_Final_Project
             var labels = top10Federations.Select(kvp => kvp.Key).ToArray();
             var counts = top10Federations.Select(kvp => (double)kvp.Value).ToArray();
 
-            // Limpiar gráfico anterior
-            graphic.Plot.Title("");
-            graphic.Plot.Clear();
-
             // Paso 3: Crear barras horizontales
             ScottPlot.Bar[] bars = new ScottPlot.Bar[counts.Length];
             for (int i = 0; i < counts.Length; i++)
@@ -1215,6 +1307,7 @@ namespace _4th_Semester_Final_Project
             graphic.Plot.YLabel("Federation");
             graphic.Plot.XLabel("Number of Grandmasters");
             graphic.Plot.Axes.Margins(left: 0);
+            graphic.Plot.Axes.SetLimitsX(0, counts.Max() * 1.1);
             // Actualizar gráfico
             graphic.Refresh();
         }
@@ -1266,6 +1359,35 @@ namespace _4th_Semester_Final_Project
                     playerNode.Nodes.Add(inactiveFlagNode);
                 }
             }
+        }
+
+        private void btnShowTreeview_Click(object sender, EventArgs e)
+        {
+            switch (dataSourceType)
+            {
+                case "API":
+                    List<Movie> movies = ConvertDataTableToMovies(originalDataTable);
+                    LoadMoviesIntoTreeView(movies);
+                    break;
+                case "CSV":
+                case "XML":
+                case "JSON":
+                    LoadPlayerStatsIntoTreeView(new DataView(originalDataTable));
+                    break;
+
+                case "DATABASE":
+                    LoadPlayerChessStatsIntoTreeView(new DataView(originalDataTable));
+                    break;
+
+                default:
+                    MessageBox.Show("No data source selected.");
+                    break;
+            }
+        }
+
+        private async void cmbMovieType_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            await LoadMoviesByTypeAsync(cmbMovieType.SelectedItem?.ToString());
         }
     }
 }
