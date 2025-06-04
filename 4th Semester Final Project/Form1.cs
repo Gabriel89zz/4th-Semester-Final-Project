@@ -737,48 +737,123 @@ namespace _4th_Semester_Final_Project
         {
             string recipient = txtAddressee.Text.Trim();
 
-            if (dataSourceType == "API" || dataSourceType == "DATABASE")
+            if (string.IsNullOrEmpty(recipient))
             {
-                MessageBox.Show("To send the data, you must first export it to a CSV, XML, JSON or TXT file.");
+                MessageBox.Show("Please enter the recipient email address.");
                 return;
             }
 
-            if (string.IsNullOrEmpty(recipient) || string.IsNullOrEmpty(currentFilePath))
+            // Mostrar diálogo para seleccionar tipo de archivo
+            using (SaveFileDialog sfd = new SaveFileDialog())
             {
-                MessageBox.Show("Please enter the recipient and select a file.");
-                return;
-            }
+                sfd.Title = "Select file type to send";
+                sfd.Filter = "CSV File (*.csv)|*.csv|TXT File (*.txt)|*.txt|JSON File (*.json)|*.json|XML File (*.xml)|*.xml";
+                sfd.DefaultExt = "csv";
+                sfd.FileName = "ExportedData"; // Nombre por defecto
 
-            try
-            {
-                // Configuración SMTP (Gmail)
-                SmtpClient client = new SmtpClient("smtp.gmail.com", 587)
+                if (sfd.ShowDialog() == DialogResult.OK)
                 {
-                    Credentials = new NetworkCredential("elcomparosh97@gmail.com", "kecp sfqy aosh jpjj"),
-                    EnableSsl = true
-                };
+                    string tempFilePath = sfd.FileName;
+                    string extension = Path.GetExtension(tempFilePath).ToLower();
 
-                MailMessage mail = new MailMessage
-                {
-                    From = new MailAddress("elcomparosh97@gmail.com"),
-                    Subject = "Archivo adjunto",
-                    Body = "Este es el archivo solicitado.",
-                    IsBodyHtml = false
-                };
+                    try
+                    {
+                        // Exportar los datos actuales (filtrados si hay filtro aplicado)
+                        DataTable dataToExport = GetCurrentDataTable();
 
-                mail.To.Add(recipient);
-                mail.Attachments.Add(new Attachment(currentFilePath));
+                        if (dataToExport == null || dataToExport.Rows.Count == 0)
+                        {
+                            MessageBox.Show("No data to send.");
+                            return;
+                        }
 
-                client.Send(mail);
-                mail.Dispose();
+                        // Exportar a archivo temporal
+                        switch (extension)
+                        {
+                            case ".csv":
+                                ExportToCSV(tempFilePath);
+                                break;
+                            case ".txt":
+                                ExportToTxt(tempFilePath, '|');
+                                break;
+                            case ".json":
+                                ExportToJson(tempFilePath);
+                                break;
+                            case ".xml":
+                                ExportToXML(tempFilePath);
+                                break;
+                            default:
+                                MessageBox.Show("Unsupported file type.");
+                                return;
+                        }
 
-                MessageBox.Show("Email sent successfully.");
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error sending email: " + ex.Message);
+                        // Enviar el archivo por email
+                        SendEmailWithAttachment(recipient, tempFilePath);
+
+                        // Eliminar el archivo temporal después de enviarlo
+                        File.Delete(tempFilePath);
+
+                        MessageBox.Show("Email sent successfully.");
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Error sending email: " + ex.Message);
+                        // Asegurarse de eliminar el archivo temporal en caso de error
+                        if (File.Exists(tempFilePath))
+                        {
+                            File.Delete(tempFilePath);
+                        }
+                    }
+                }
             }
         }
+
+        private DataTable GetCurrentDataTable()
+        {
+            // Obtener los datos actuales (filtrados si hay filtro aplicado)
+            if (dgvData.DataSource is DataTable dt)
+            {
+                return dt;
+            }
+            else if (dgvData.DataSource is DataView dv)
+            {
+                return dv.ToTable();
+            }
+            else if (dgvData.DataSource is BindingSource bs && bs.DataSource is DataTable)
+            {
+                return (DataTable)bs.DataSource;
+            }
+            else if (originalDataTable != null)
+            {
+                return originalDataTable;
+            }
+
+            return null;
+        }
+        private void SendEmailWithAttachment(string recipient, string filePath)
+        {
+            // Configuración SMTP (Gmail)
+            SmtpClient client = new SmtpClient("smtp.gmail.com", 587)
+            {
+                Credentials = new NetworkCredential("elcomparosh97@gmail.com", "kecp sfqy aosh jpjj"),
+                EnableSsl = true
+            };
+
+            MailMessage mail = new MailMessage
+            {
+                From = new MailAddress("elcomparosh97@gmail.com"),
+                Subject = "Data export",
+                Body = "Please find attached the requested data file.",
+                IsBodyHtml = false
+            };
+
+            mail.To.Add(recipient);
+            mail.Attachments.Add(new Attachment(filePath));
+
+            client.Send(mail);
+            mail.Dispose();
+        }
+
 
         private async void btnLoadToAPI_Click(object sender, EventArgs e)
         {
