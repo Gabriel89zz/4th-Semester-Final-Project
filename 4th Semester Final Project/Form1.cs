@@ -43,7 +43,7 @@ namespace _4th_Semester_Final_Project
             }
         }
 
-        private void btnOpen_Click(object sender, EventArgs e)
+        private async void btnOpen_Click(object sender, EventArgs e)
         {
             using (OpenFileDialog ofd = new OpenFileDialog())
             {
@@ -57,13 +57,12 @@ namespace _4th_Semester_Final_Project
                     {
                         ClearChart();
                         cmbMovieType.Visible = false;
-                        //LoadInTextbox(filePath);
                         dgvData.DataSource = null;
 
                         switch (ext)
                         {
                             case ".csv":
-                                dgvData.DataSource = LoadDataFromCSV(filePath);
+                                dgvData.DataSource = await LoadDataFromCSVAsync(filePath);
                                 break;
                             case ".txt":
                                 // Asumimos que los .txt usan | como delimitador
@@ -86,7 +85,9 @@ namespace _4th_Semester_Final_Project
                             ".json" => "JSON",
                             _ => ""
                         };
-                        //LoadPlayerStatsIntoTreeView(new DataView(originalDataTable/*dataTable*/));
+                        cmbFilter.Items.Clear();
+                        foreach (DataColumn col in originalDataTable.Columns)
+                            cmbFilter.Items.Add(col.ColumnName);
                         UpdateRecordCount();
                     }
                     catch (Exception ex)
@@ -106,58 +107,86 @@ namespace _4th_Semester_Final_Project
             txtData.Text = texto;
         }
 
-        private DataTable LoadDataFromCSV(string filePath)
+        private async Task<DataTable> LoadDataFromCSVAsync(string filePath)
         {
-            DataTable dataTable = new DataTable();
+            var dataTable = new DataTable();
+            string[] headers = null;
 
-            try
+            using (var reader = new StreamReader(filePath))
             {
-                using (TextFieldParser parser = new TextFieldParser(filePath))
+                string line = await reader.ReadLineAsync();
+
+                if (!string.IsNullOrWhiteSpace(line))
                 {
-                    parser.TextFieldType = FieldType.Delimited;
-                    parser.SetDelimiters(",");
-                    parser.HasFieldsEnclosedInQuotes = true;
-                    parser.TrimWhiteSpace = true;
-
-                    if (!parser.EndOfData)
-                    {
-                        string[] headers = parser.ReadFields();
-                        foreach (string header in headers)
-                        {
-                            dataTable.Columns.Add(header);
-                        }
-
-                        while (!parser.EndOfData)
-                        {
-                            string[] fields = parser.ReadFields();
-
-                            if (fields == null || fields.Length < headers.Length)
-                                continue;
-
-                            DataRow dataRow = dataTable.NewRow();
-                            for (int i = 0; i < headers.Length; i++)
-                            {
-                                dataRow[i] = fields[i];
-                            }
-                            dataTable.Rows.Add(dataRow);
-                        }
-                    }
+                    headers = SplitCsvLine(line);
+                    foreach (string header in headers)
+                        dataTable.Columns.Add(header);
                 }
 
-                currentFilePath = filePath;
-                currentFileExtension = Path.GetExtension(filePath).ToLower();
+                while ((line = await reader.ReadLineAsync()) != null)
+                {
+                    if (string.IsNullOrWhiteSpace(line)) continue;
 
-                originalDataTable = dataTable;
-                cmbFilter.Items.Clear();
-                foreach (DataColumn col in dataTable.Columns)
-                    cmbFilter.Items.Add(col.ColumnName);
+                    string[] fields = SplitCsvLine(line);
+
+                    if (fields == null || fields.Length < headers.Length)
+                        continue;
+
+                    DataRow dataRow = dataTable.NewRow();
+                    for (int i = 0; i < headers.Length; i++)
+                    {
+                        dataRow[i] = fields[i];
+                    }
+                    dataTable.Rows.Add(dataRow);
+                }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error reading CSV file: " + ex.Message);
-            }
+
+            // Asignaciones posteriores fuera del bucle principal
+            currentFilePath = filePath;
+            currentFileExtension = Path.GetExtension(filePath).ToLower();
+            originalDataTable = dataTable;
 
             return dataTable;
+        }
+
+        // Función simple para dividir líneas CSV (mejor que TextFieldParser para rendimiento)
+        private string[] SplitCsvLine(string line)
+        {
+            List<string> result = new List<string>();
+            bool inQuotes = false;
+            int fieldStart = 0;
+
+            for (int i = 0; i < line.Length; i++)
+            {
+                char c = line[i];
+
+                if (c == '"')
+                {
+                    inQuotes = !inQuotes;
+                    if (i + 1 < line.Length && line[i + 1] == '"') // Escapar ""
+                    {
+                        line = line.Remove(i + 1, 1); // Eliminar un "
+                    }
+                }
+                else if (c == ',' && !inQuotes)
+                {
+                    result.Add(line.Substring(fieldStart, i - fieldStart));
+                    fieldStart = i + 1;
+                }
+            }
+
+            result.Add(line.Substring(fieldStart));
+
+            return result.ToArray();
+        }
+
+        private void dgvData_CellValueNeeded(object sender, DataGridViewCellValueEventArgs e)
+        {
+            if (e.RowIndex < originalDataTable.Rows.Count)
+            {
+                var row = originalDataTable.Rows[e.RowIndex];
+                e.Value = row[e.ColumnIndex];
+            }
         }
 
         private DataTable LoadDataFromJSON(string filePath)
@@ -854,7 +883,6 @@ namespace _4th_Semester_Final_Project
             mail.Dispose();
         }
 
-
         private async void btnLoadToAPI_Click(object sender, EventArgs e)
         {
             dataSourceType = "API";
@@ -1018,7 +1046,7 @@ namespace _4th_Semester_Final_Project
                 cmbMovieType.Visible = false;
                 ClearChart();
                 //string query = "SELECT * FROM top_chess_players_aug_2020";
-                string query = "  SELECT TOP 100000 * FROM top_chess_players_aug_2020;";
+                string query = "  SELECT TOP 50000 * FROM top_chess_players_aug_2020;";
 
                 adapter = new SqlDataAdapter(query, connection);
                 SqlCommandBuilder commandBuilder = new SqlCommandBuilder(adapter);
@@ -1447,6 +1475,7 @@ namespace _4th_Semester_Final_Project
                 case "CSV":
                 case "XML":
                 case "JSON":
+                case "TXT":
                     LoadPlayerStatsIntoTreeView(new DataView(originalDataTable));
                     break;
 

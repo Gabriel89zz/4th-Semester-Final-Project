@@ -1,4 +1,6 @@
-﻿namespace _4th_Semester_Final_Project
+﻿using System.Windows.Forms;
+
+namespace _4th_Semester_Final_Project
 {
     partial class Form1
     {
@@ -67,6 +69,9 @@
             dgvData.Size = new Size(785, 285);
             dgvData.TabIndex = 1;
             dgvData.SelectionChanged += dgvData_SelectionChanged;
+
+            dgvData.VirtualMode = true;
+            dgvData.CellValueNeeded += dgvData_CellValueNeeded;
             // 
             // treeViewMovies
             // 
