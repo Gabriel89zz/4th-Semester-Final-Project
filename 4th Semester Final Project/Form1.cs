@@ -415,32 +415,36 @@ namespace _4th_Semester_Final_Project
         {
             using (StreamWriter writer = new StreamWriter(filepath))
             {
-                // Escribir la primera fila con los encabezados de las columnas
+                // Escribir encabezados
                 StringBuilder filaEncabezados = new StringBuilder();
                 foreach (DataGridViewColumn columna in dgvData.Columns)
                 {
-                    filaEncabezados.Append(columna.HeaderText + ",");
+                    filaEncabezados.Append("\"" + columna.HeaderText.Replace("\"", "\"\"") + "\",");
                 }
-                writer.WriteLine(filaEncabezados.ToString());
+                writer.WriteLine(filaEncabezados.ToString().TrimEnd(','));
 
-                // Recorrer las filas del DataGridView y escribirlas en el archivo CSV
+                // Escribir filas
                 foreach (DataGridViewRow fila in dgvData.Rows)
                 {
                     StringBuilder filaDatos = new StringBuilder();
                     foreach (DataGridViewCell celda in fila.Cells)
                     {
-                        // Verificar si la celda está vacía antes de acceder a su valor
                         if (celda.Value != null)
                         {
-                            filaDatos.Append(celda.Value.ToString() + ",");
+                            string valor = celda.Value.ToString();
+                            // Si el valor contiene comillas o comas, lo encerramos entre comillas
+                            if (valor.Contains(",") || valor.Contains("\""))
+                            {
+                                valor = "\"" + valor.Replace("\"", "\"\"") + "\"";
+                            }
+                            filaDatos.Append(valor + ",");
                         }
-                        //else
-                        //{
-                        //    // Manejar celdas vacías
-                        //    filaDatos.Append("[CELDA VACÍA],");
-                        //}
+                        else
+                        {
+                            filaDatos.Append(",");
+                        }
                     }
-                    writer.WriteLine(filaDatos.ToString());
+                    writer.WriteLine(filaDatos.ToString().TrimEnd(','));
                 }
             }
         }
@@ -680,7 +684,8 @@ namespace _4th_Semester_Final_Project
 
         private void ExportToPdf(string filePath)
         {
-            Document doc = new Document(PageSize.A4, 10, 10, 10, 10);
+            // Cambiar a orientación horizontal usando Rotate()
+            Document doc = new Document(PageSize.A4.Rotate(), 10, 10, 10, 10);
 
             try
             {
@@ -703,14 +708,20 @@ namespace _4th_Semester_Final_Project
                     pdfTable.AddCell(cell);
                 }
 
-                // Agregar datos
+                // Agregar filas
                 foreach (DataGridViewRow row in dgvData.Rows)
                 {
                     if (!row.IsNewRow)
                     {
                         foreach (DataGridViewCell cell in row.Cells)
                         {
-                            pdfTable.AddCell(new Phrase(cell.Value?.ToString(), font));
+                            string valor = cell.Value?.ToString() ?? string.Empty;
+
+                            // Limpiar o formatear si hay caracteres problemáticos (opcional)
+                            // Ejemplo: Reemplazar múltiples espacios o saltos de línea si fuera necesario
+                            valor = valor.Replace("\n", " ").Replace("\r", "").Trim();
+
+                            pdfTable.AddCell(new Phrase(valor, font));
                         }
                     }
                 }
