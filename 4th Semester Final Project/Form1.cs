@@ -87,7 +87,9 @@ namespace _4th_Semester_Final_Project
                         };
                         cmbFilter.Items.Clear();
                         foreach (DataColumn col in originalDataTable.Columns)
+                        {
                             cmbFilter.Items.Add(col.ColumnName);
+                        }
                         UpdateRecordCount();
                     }
                     catch (Exception ex)
@@ -141,7 +143,6 @@ namespace _4th_Semester_Final_Project
                 }
             }
 
-            // Asignaciones posteriores fuera del bucle principal
             currentFilePath = filePath;
             currentFileExtension = Path.GetExtension(filePath).ToLower();
             originalDataTable = dataTable;
@@ -180,15 +181,6 @@ namespace _4th_Semester_Final_Project
             return result.ToArray();
         }
 
-        private void dgvData_CellValueNeeded(object sender, DataGridViewCellValueEventArgs e)
-        {
-            if (e.RowIndex < originalDataTable.Rows.Count)
-            {
-                var row = originalDataTable.Rows[e.RowIndex];
-                e.Value = row[e.ColumnIndex];
-            }
-        }
-
         private DataTable LoadDataFromJSON(string filePath)
         {
             DataTable dataTable = new DataTable();
@@ -225,9 +217,6 @@ namespace _4th_Semester_Final_Project
                         currentFileExtension = Path.GetExtension(filePath).ToLower();
 
                         originalDataTable = dataTable;
-                        cmbFilter.Items.Clear();
-                        foreach (DataColumn col in dataTable.Columns)
-                            cmbFilter.Items.Add(col.ColumnName);
                     }
                     else
                     {
@@ -265,9 +254,7 @@ namespace _4th_Semester_Final_Project
                 currentFileExtension = Path.GetExtension(filePath).ToLower();
 
                 originalDataTable = dataTable;
-                cmbFilter.Items.Clear();
-                foreach (DataColumn col in dataTable.Columns)
-                    cmbFilter.Items.Add(col.ColumnName);
+
             }
             catch (Exception ex)
             {
@@ -303,9 +290,6 @@ namespace _4th_Semester_Final_Project
                 currentFileExtension = Path.GetExtension(filePath).ToLower();
 
                 originalDataTable = dt;
-                cmbFilter.Items.Clear();
-                foreach (DataColumn col in dt.Columns)
-                    cmbFilter.Items.Add(col.ColumnName);
             }
             catch (Exception ex)
             {
@@ -332,8 +316,10 @@ namespace _4th_Semester_Final_Project
                     switch (currentFileExtension)
                     {
                         case ".csv":
-                        case ".txt":
                             ExportToCSV(currentFilePath);
+                            break;
+                        case ".txt":
+                            ExportToTxt(currentFilePath, '|');
                             break;
                         case ".json":
                             ExportToJson(currentFilePath);
@@ -384,31 +370,6 @@ namespace _4th_Semester_Final_Project
                     break;
             }
 
-
-            //if (string.IsNullOrEmpty(currentFilePath) || originalDataTable == null)
-            //{
-            //    MessageBox.Show("No file uploaded to save.");
-            //    return;
-            //}
-
-            //switch (currentFileExtension)
-            //{
-            //    case ".csv":
-            //    case ".txt":
-            //        ExportToCSV(currentFilePath);
-            //        break;
-            //    case ".json":
-            //        ExportToJson(currentFilePath);
-            //        break;
-            //    case ".xml":
-            //        ExportToXML(currentFilePath);
-            //        break;
-            //    default:
-            //        MessageBox.Show("Unsupported format for saving.");
-            //        break;
-            //}
-
-            //MessageBox.Show("File saved successfully.");
         }
 
         private void ExportToCSV(string filepath)
@@ -538,7 +499,7 @@ namespace _4th_Semester_Final_Project
             }
         }
 
-        private void textBox1_TextChanged(object sender, EventArgs e)
+        private void txtFilter_TextChanged(object sender, EventArgs e)
         {
             if (originalDataTable == null || cmbFilter.SelectedItem == null)
                 return;
@@ -614,7 +575,7 @@ namespace _4th_Semester_Final_Project
                     ShowLanguageDistribution(filteredMovies);
                     LoadMoviesIntoTreeView(filteredMovies);
                 }
-                else if (dataSourceType == "CSV" || dataSourceType == "XML" || dataSourceType == "JSON")
+                else if (dataSourceType == "CSV" || dataSourceType == "XML" || dataSourceType == "JSON" || dataSourceType == "TXT")
                 {
                     LoadPlayerStatsIntoTreeView(dv);
                 }
@@ -738,41 +699,6 @@ namespace _4th_Semester_Final_Project
             }
         }
 
-        private void btnCreate_Click(object sender, EventArgs e)
-        {
-            using (SaveFileDialog sfd = new SaveFileDialog())
-            {
-                sfd.Title = "Create new file";
-                sfd.Filter = "CSV File (*.csv)|*.csv|TXT File (*.txt)|*.txt|JSON File (*.json)|*.json|XML File (*.xml)|*.xml";
-                sfd.DefaultExt = "csv";
-
-                if (sfd.ShowDialog() == DialogResult.OK)
-                {
-                    string filePath = sfd.FileName;
-                    string extension = Path.GetExtension(filePath).ToLower();
-
-                    switch (extension)
-                    {
-                        case ".csv":
-                        case ".txt":
-                            ExportToCSV(filePath);
-                            break;
-                        case ".json":
-                            ExportToJson(filePath);
-                            break;
-                        case ".xml":
-                            ExportToXML(filePath);
-                            break;
-                        default:
-                            MessageBox.Show("Unsupported file type.");
-                            break;
-                    }
-
-                    MessageBox.Show("File created successfully.");
-                }
-            }
-        }
-
         private void btnEmail_Click(object sender, EventArgs e)
         {
             string recipient = txtAddressee.Text.Trim();
@@ -787,7 +713,7 @@ namespace _4th_Semester_Final_Project
             using (SaveFileDialog sfd = new SaveFileDialog())
             {
                 sfd.Title = "Select file type to send";
-                sfd.Filter = "CSV File (*.csv)|*.csv|TXT File (*.txt)|*.txt|JSON File (*.json)|*.json|XML File (*.xml)|*.xml";
+                sfd.Filter = "CSV File (*.csv)|*.csv|TXT File (*.txt)|*.txt|JSON File (*.json)|*.json|XML File (*.xml)|*.xml|PDF File (*.pdf)|*.pdf";
                 sfd.DefaultExt = "csv";
                 sfd.FileName = "ExportedData"; // Nombre por defecto
 
@@ -822,6 +748,9 @@ namespace _4th_Semester_Final_Project
                             case ".xml":
                                 ExportToXML(tempFilePath);
                                 break;
+                            case ".pdf":
+                                ExportToPdf(tempFilePath);
+                                break;
                             default:
                                 MessageBox.Show("Unsupported file type.");
                                 return;
@@ -847,7 +776,6 @@ namespace _4th_Semester_Final_Project
                 }
             }
         }
-
         private DataTable GetCurrentDataTable()
         {
             // Obtener los datos actuales (filtrados si hay filtro aplicado)
@@ -870,6 +798,7 @@ namespace _4th_Semester_Final_Project
 
             return null;
         }
+
         private void SendEmailWithAttachment(string recipient, string filePath)
         {
             // Configuración SMTP (Gmail)
@@ -882,13 +811,53 @@ namespace _4th_Semester_Final_Project
             MailMessage mail = new MailMessage
             {
                 From = new MailAddress("elcomparosh97@gmail.com"),
-                Subject = "Data export",
-                Body = "Please find attached the requested data file.",
+                //Subject = "Data export",
+                //Body = "Please find attached the requested data file.",
                 IsBodyHtml = false
             };
 
             mail.To.Add(recipient);
             mail.Attachments.Add(new Attachment(filePath));
+
+            switch (dataSourceType)
+            {
+                case "API":
+                    switch (cmbMovieType.SelectedItem?.ToString())
+                    {
+                        case "Popular":
+                            mail.Subject = "Popular Movies Exported";
+                            mail.Body = "I attach the file with the popular films selected.";
+                            break;
+                        case "Top Rated":
+                            mail.Subject = "Top Rated Movies Exported";
+                            mail.Body = "I attach the file with the best valued movies.";
+                            break;
+                        case "Now Playing":
+                            mail.Subject = "Now Playing Movies Exported";
+                            mail.Body = "I attach the file with the selected billboard films.";
+                            break;
+                        case "Upcoming":
+                            mail.Subject = "Upcoming Movies Exported";
+                            mail.Body = "I attach the file with the close films to be released selected.";
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case "DATABASE":
+                    mail.Subject = "Top Chess Player Exported";
+                    mail.Body = "I attach the file with the best chess players of the month of August 2020.";
+                    break;
+                case "CSV":
+                    mail.Subject = "Footbal Player Stats Exported";
+                    mail.Body = "I attach the file with the statistics of soccer players.";
+                    
+                    break;
+                default:
+                    mail.Subject = "Datos Exportados";
+                    mail.Body = "Por favor, encuentra adjunto el archivo con los datos solicitados.";
+                    break;
+            }
 
             client.Send(mail);
             mail.Dispose();
@@ -962,6 +931,7 @@ namespace _4th_Semester_Final_Project
                     }
 
                     txtData.Text = sb.ToString();
+                    UpdateRecordCount();
                 }
                 catch (Exception ex)
                 {
@@ -1013,8 +983,9 @@ namespace _4th_Semester_Final_Project
             originalDataTable = table;
             cmbFilter.Items.Clear();
             foreach (DataColumn col in table.Columns)
+            {
                 cmbFilter.Items.Add(col.ColumnName);
-
+            }
             return table;
         }
 
@@ -1069,9 +1040,12 @@ namespace _4th_Semester_Final_Project
                 cmbFilter.Items.Clear();
 
                 foreach (DataColumn col in originalDataTable.Columns)
+                {
                     cmbFilter.Items.Add(col.ColumnName);
+                }
                 dataSourceType = "DATABASE";
                 GenerateGraph();
+                UpdateRecordCount();
                 MessageBox.Show("Data loaded successfully");
             }
             catch (Exception ex)
@@ -1107,37 +1081,6 @@ namespace _4th_Semester_Final_Project
             }
 
             txtData.Text = sb.ToString(); // Asignar al TextBox
-        }
-
-        private void btnSaveInBD_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                if (dataSourceType != "DATABASE")
-                {
-                    MessageBox.Show("No data has been loaded from the database. Please load data first.");
-                    return;
-                }
-
-                if (originalDataTable != null)
-                {
-                    // Aplicar cambios pendientes en el DataGridView
-                    dgvData.EndEdit();
-
-                    // Actualizar la base de datos
-                    adapter.Update(originalDataTable);
-
-                    MessageBox.Show("Changes saved successfully");
-                }
-                else
-                {
-                    MessageBox.Show("There is no data to save. Please load data first.");
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error saving changes: {ex.Message}");
-            }
         }
 
         private void ShowLanguageDistribution(List<Movie> movies)
@@ -1504,5 +1447,6 @@ namespace _4th_Semester_Final_Project
         {
             await LoadMoviesByTypeAsync(cmbMovieType.SelectedItem?.ToString());
         }
+
     }
 }

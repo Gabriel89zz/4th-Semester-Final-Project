@@ -39,14 +39,12 @@ namespace _4th_Semester_Final_Project
             txtFilter = new TextBox();
             btnSave = new Button();
             btnExport = new Button();
-            btnCreate = new Button();
             cmbFilter = new ComboBox();
             btnSendByEmail = new Button();
             btnLoadToAPI = new Button();
             txtAddressee = new TextBox();
             label2 = new Label();
             btnBD = new Button();
-            btnSaveInBD = new Button();
             lblRecordCount = new Label();
             btnShowTreeview = new Button();
             cmbMovieType = new ComboBox();
@@ -69,9 +67,6 @@ namespace _4th_Semester_Final_Project
             dgvData.Size = new Size(785, 285);
             dgvData.TabIndex = 1;
             dgvData.SelectionChanged += dgvData_SelectionChanged;
-
-            dgvData.VirtualMode = true;
-            dgvData.CellValueNeeded += dgvData_CellValueNeeded;
             // 
             // treeViewMovies
             // 
@@ -115,11 +110,11 @@ namespace _4th_Semester_Final_Project
             txtFilter.Name = "txtFilter";
             txtFilter.Size = new Size(251, 32);
             txtFilter.TabIndex = 6;
-            txtFilter.TextChanged += textBox1_TextChanged;
+            txtFilter.TextChanged += txtFilter_TextChanged;
             // 
             // btnSave
             // 
-            btnSave.Location = new Point(444, 14);
+            btnSave.Location = new Point(476, 14);
             btnSave.Name = "btnSave";
             btnSave.Size = new Size(98, 33);
             btnSave.TabIndex = 7;
@@ -129,23 +124,13 @@ namespace _4th_Semester_Final_Project
             // 
             // btnExport
             // 
-            btnExport.Location = new Point(328, 63);
+            btnExport.Location = new Point(328, 58);
             btnExport.Name = "btnExport";
             btnExport.Size = new Size(98, 33);
             btnExport.TabIndex = 9;
             btnExport.Text = "Export";
             btnExport.UseVisualStyleBackColor = true;
             btnExport.Click += btnExport_Click;
-            // 
-            // btnCreate
-            // 
-            btnCreate.Location = new Point(444, 63);
-            btnCreate.Name = "btnCreate";
-            btnCreate.Size = new Size(98, 33);
-            btnCreate.TabIndex = 10;
-            btnCreate.Text = "Create";
-            btnCreate.UseVisualStyleBackColor = true;
-            btnCreate.Click += btnCreate_Click;
             // 
             // cmbFilter
             // 
@@ -167,7 +152,7 @@ namespace _4th_Semester_Final_Project
             // 
             // btnLoadToAPI
             // 
-            btnLoadToAPI.Location = new Point(602, 14);
+            btnLoadToAPI.Location = new Point(624, 14);
             btnLoadToAPI.Name = "btnLoadToAPI";
             btnLoadToAPI.Size = new Size(98, 33);
             btnLoadToAPI.TabIndex = 13;
@@ -190,27 +175,17 @@ namespace _4th_Semester_Final_Project
             label2.Name = "label2";
             label2.Size = new Size(47, 15);
             label2.TabIndex = 15;
-            label2.Text = "mail to:";
+            label2.Text = "Mail to:";
             // 
             // btnBD
             // 
-            btnBD.Location = new Point(602, 63);
+            btnBD.Location = new Point(624, 58);
             btnBD.Name = "btnBD";
             btnBD.Size = new Size(98, 33);
             btnBD.TabIndex = 16;
             btnBD.Text = "BD";
             btnBD.UseVisualStyleBackColor = true;
             btnBD.Click += btnBD_Click;
-            // 
-            // btnSaveInBD
-            // 
-            btnSaveInBD.Location = new Point(706, 63);
-            btnSaveInBD.Name = "btnSaveInBD";
-            btnSaveInBD.Size = new Size(98, 33);
-            btnSaveInBD.TabIndex = 17;
-            btnSaveInBD.Text = "Save In BD";
-            btnSaveInBD.UseVisualStyleBackColor = true;
-            btnSaveInBD.Click += btnSaveInBD_Click;
             // 
             // lblRecordCount
             // 
@@ -222,7 +197,7 @@ namespace _4th_Semester_Final_Project
             // 
             // btnShowTreeview
             // 
-            btnShowTreeview.Location = new Point(706, 14);
+            btnShowTreeview.Location = new Point(476, 58);
             btnShowTreeview.Name = "btnShowTreeview";
             btnShowTreeview.Size = new Size(98, 33);
             btnShowTreeview.TabIndex = 19;
@@ -248,14 +223,12 @@ namespace _4th_Semester_Final_Project
             Controls.Add(cmbMovieType);
             Controls.Add(btnShowTreeview);
             Controls.Add(lblRecordCount);
-            Controls.Add(btnSaveInBD);
             Controls.Add(btnBD);
             Controls.Add(label2);
             Controls.Add(txtAddressee);
             Controls.Add(btnLoadToAPI);
             Controls.Add(btnSendByEmail);
             Controls.Add(cmbFilter);
-            Controls.Add(btnCreate);
             Controls.Add(btnExport);
             Controls.Add(btnSave);
             Controls.Add(txtFilter);
@@ -283,14 +256,12 @@ namespace _4th_Semester_Final_Project
         private TextBox txtFilter;
         private Button btnSave;
         private Button btnExport;
-        private Button btnCreate;
         private ComboBox cmbFilter;
         private Button btnSendByEmail;
         private Button btnLoadToAPI;
         private TextBox txtAddressee;
         private Label label2;
         private Button btnBD;
-        private Button btnSaveInBD;
         private Label lblRecordCount;
         private Button btnShowTreeview;
         private ComboBox cmbMovieType;
